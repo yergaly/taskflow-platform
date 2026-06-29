@@ -44,8 +44,9 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String _message = '';
 
-  final String _baseUrl = 'http://172.20.10.3:8000';
-
+  //final String _baseUrl = 'http://172.20.10.3:8000';
+  final String _baseUrl = 'https://mac-studio.tailbc593.ts.net';
+  
   Future<void> _submitAuth() async {
     if (!_formKey.currentState!.validate()) return;
 
