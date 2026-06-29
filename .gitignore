@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Flutter
+.dart_tool/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Secrets
+task-management/management-499913-4c943176ab51.json
