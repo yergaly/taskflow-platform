@@ -16,6 +16,9 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def home():
+    return {"status":"ok"}
 
 @app.post("/auth/register", status_code=status.HTTP_201_CREATED)
 def register(user: models.UserRegister):
