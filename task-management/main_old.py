@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer
-import jwt
+from fastapi.middleware.cors import CORSMiddleware
 import models
 import auth
 import google_sheet
-from typing import Optional, List
 
 app = FastAPI(title="TaskFlow API")
 
