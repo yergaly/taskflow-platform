@@ -10,7 +10,7 @@ SCOPES = [
 
 # Инициализация клиента
 creds = Credentials.from_service_account_file(
-    "management-499913-4c943176ab51.json",
+    "management-google-cloud.json",
     scopes=SCOPES
 )
 client = gspread.authorize(creds)

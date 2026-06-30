@@ -16,4 +16,7 @@ build/
 .vscode/
 
 # Secrets
-task-management/management-499913-4c943176ab51.json
+backend/management-google-cloud.json
+
+backend/*.json
+backend/uvicorn.log
