@@ -132,13 +132,11 @@ def register(user: models.UserRegister):
 
 
 @app.post("/auth/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    # Вместо user.email теперь используем form_data.username
-    normalized_email = form_data.username.strip().lower()
+def login(user: models.UserLogin):  # <-- Возвращаем как было!
+    normalized_email = user.email.strip().lower()
     db_user = google_sheet.get_user_by_email(normalized_email)
 
-    # Вместо user.password используем form_data.password
-    if not db_user or not auth.verify_password(form_data.password, db_user["hashed_password"]):
+    if not db_user or not auth.verify_password(user.password, db_user["hashed_password"]):
         raise HTTPException(
             status_code=400,
             detail="Incorrect email or password"
