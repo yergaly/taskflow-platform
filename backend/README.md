@@ -13,3 +13,5 @@ launchctl kickstart -k gui/$(id -u)/com.yergali.taskflow-api
 #Перезапустить
 launchctl unload ~/Library/LaunchAgents/com.yergali.taskflow-api.plist 2>/dev/null
 launchctl load ~/Library/LaunchAgents/com.yergali.taskflow-api.plist
+
+
