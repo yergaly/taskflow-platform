@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// ТА САМАЯ ФУНКЦИЯ MAIN, КОТОРУЮ ПОТЕРЯЛ КСКОД:
 void main() {
   runApp(const TaskFlowApp());
 }
@@ -20,112 +19,13 @@ class TaskFlowApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF0F0C1B),
         primaryColor: const Color(0xFF6366F1),
       ),
-      home: const LandingScreen(), 
+      home: const AuthScreen(),
     );
   }
 }
 
 // ==========================================
-// 0. ПУБЛИЧНЫЙ ЛЕНДИНГ (LANDING SCREEN)
-// ==========================================
-class LandingScreen extends StatefulWidget {
-  const LandingScreen({super.key});
-
-  @override
-  State<LandingScreen> createState() => _LandingScreenState();
-}
-
-class _LandingScreenState extends State<LandingScreen> {
-  final String _baseUrl = 'https://mac-studio.tailbc593.ts.net';
-  Map<String, dynamic>? _stats;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchPublicStats();
-  }
-
-  Future<void> _fetchPublicStats() async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/public/stats'));
-      if (response.statusCode == 200) {
-        setState(() {
-          _stats = jsonDecode(response.body);
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.blur_on, color: Color(0xFF6366F1), size: 32),
-                      SizedBox(width: 8),
-                      Text('TaskFlow', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1)),
-                    child: const Text('Sign In', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              const Text(
-                'Scale Your Team\nManage with Precision.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, height: 1.2),
-              ),
-              const SizedBox(height: 40),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatItem(_stats?['completed_tasks'] ?? '163', 'Tasks Done'),
-                        _buildStatItem(_stats?['on_time_rate'] ?? '91%', 'On-Time'),
-                        _buildStatItem(_stats?['active_projects'] ?? '12', 'Projects'),
-                      ],
-                    ),
-              const Spacer(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String val, String label) {
-    return Column(
-      children: [
-        Text(val, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF00F5D4))),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-      ],
-    );
-  }
-}
-
-// ==========================================
-// 1. ЭКРАН АВТОРИЗАЦИИ
+// 1. ЭКРАН АВТОРИЗАЦИИ И РЕГИСТРАЦИИ
 // ==========================================
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -144,6 +44,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String _message = '';
 
+  //final String _baseUrl = 'http://172.20.10.3:8000';
   final String _baseUrl = 'https://mac-studio.tailbc593.ts.net';
   
   Future<void> _submitAuth() async {
@@ -171,20 +72,14 @@ class _AuthScreenState extends State<AuthScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (isLoginMode) {
           final token = responseData['access_token'];
-          final role = responseData['role'] ?? 'member';
           
+          // ВМЕСТО ТЕКСТА: Переходим на экран менеджера и передаем туда токен!
           if (mounted) {
-            Widget nextScreen;
-            if (role == 'head' || role == 'team_lead') {
-              nextScreen = ManagerControlPanelWidget(token: token, role: role);
-            } else {
-              nextScreen = MemberDashboardWidget(token: token);
-            }
-
-            Navigator.pushAndRemoveUntil(
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => nextScreen),
-              (route) => false,
+              MaterialPageRoute(
+                builder: (context) => ManagerControlPanelWidget(token: token),
+              ),
             );
           }
         } else {
@@ -200,11 +95,13 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _message = 'Не удалось связаться с сервером.';
+        _message = 'Не удалось связаться с сервером. Проверь FastAPI!';
       });
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -212,7 +109,6 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -296,12 +192,11 @@ class _AuthScreenState extends State<AuthScreen> {
 }
 
 // ==========================================
-// 2. ПАНЕЛЬ УПРАВЛЕНИЯ (МЕНЕДЖЕР / ТИМЛИД)
+// 2. ЭКРАН ПАНЕЛИ УПРАВЛЕНИЯ (MANAGER PANEL)
 // ==========================================
 class ManagerControlPanelWidget extends StatefulWidget {
-  final String token; 
-  final String role; 
-  const ManagerControlPanelWidget({super.key, required this.token, required this.role});
+  final String token; // Сюда сохраняется JWT-токен для будущих запросов к API
+  const ManagerControlPanelWidget({super.key, required this.token});
 
   @override
   State<ManagerControlPanelWidget> createState() => _ManagerControlPanelWidgetState();
@@ -325,8 +220,6 @@ class _ManagerControlPanelWidgetState extends State<ManagerControlPanelWidget> {
 
   @override
   Widget build(BuildContext context) {
-    String panelTitle = widget.role == 'head' ? 'Director Control Panel' : 'Team Lead Workspace';
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F0C1B),
       body: SafeArea(
@@ -341,9 +234,9 @@ class _ManagerControlPanelWidgetState extends State<ManagerControlPanelWidget> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        panelTitle,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                      const Text(
+                        'Manager Control Panel',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -352,10 +245,10 @@ class _ManagerControlPanelWidgetState extends State<ManagerControlPanelWidget> {
                       ),
                     ],
                   ),
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 20,
-                    backgroundColor: Color(0xFF6366F1),
-                    child: Text('YB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFF6366F1),
+                    child: const Text('JD', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -428,7 +321,8 @@ class _ManagerControlPanelWidgetState extends State<ManagerControlPanelWidget> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () {
-                            print('Задача: ${descriptionController.text}, Токен: ${widget.token}');
+                            // Лог в консоль для проверки сбора данных с полей
+                            print('Задача: ${descriptionController.text}, Исполнитель: ${participantController.text}');
                           },
                           child: const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                         ),
@@ -547,37 +441,6 @@ class _ManagerControlPanelWidgetState extends State<ManagerControlPanelWidget> {
           borderRadius: BorderRadius.circular(4),
         ),
       ],
-    );
-  }
-}
-
-// ==========================================
-// 3. ЗАГЛУШКА ДЛЯ ОБЫЧНЫХ СОТРУДНИКОВ (MEMBER)
-// ==========================================
-class MemberDashboardWidget extends StatelessWidget {
-  final String token;
-  const MemberDashboardWidget({super.key, required this.token});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // ИСПРАВЛЕНО: ТУТ БЫЛА ОПЕЧАТКА maincenter
-            children: [
-              const Icon(Icons.engineering_rounded, size: 64, color: Color(0xFF00F5D4)),
-              const SizedBox(height: 16),
-              const Text('Member Workspace', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text('Здесь обычные исполнители будут видеть свои задачи.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54)),
-              const SizedBox(height: 24),
-              Text('Твой JWT-Токен сохранен.', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
