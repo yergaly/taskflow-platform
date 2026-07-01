@@ -318,6 +318,16 @@ IP:
 tailscale ip
 ```
 
+Funnel:
+
+```bash
+tailscale funnel 8000
+Available on the internet:
+
+https://mac-studio.tailbc593.ts.net/
+|-- proxy http://127.0.0.1:8000
+```
+
 ---
 
 # Проверить Python
